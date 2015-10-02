@@ -8,34 +8,23 @@
 
 #import <UIKit/UIKit.h>
 
-// Default values
-#define AP_HORIZONTAL_MENU_SELECTED_INDEX_DEFAULT 0
-#define AP_HORIZONTAL_MENU_CELL_BACKGROUND_COLOR_DEFAULT [UIColor grayColor]
-#define AP_HORIZONTAL_MENU_CELL_SELECTED_COLOR_DEFAULT [UIColor colorWithRed:150.0/255.0 green:200.0/255.0 blue:150.0/255.0 alpha:1.0]
-#define AP_HORIZONTAL_MENU_TEXT_COLOR_DEFAULT [UIColor whiteColor]
-#define AP_HORIZONTAL_MENU_TEXT_SELECTED_COLOR_DEFAULT [UIColor grayColor]
-#define AP_HORIZONTAL_MENU_TEXT_FONT [UIFont boldSystemFontOfSize:16.0]
-
 // Protocol to get the selected item
 @protocol APHorizontalMenuSelectDelegate <NSObject>
 
-@required
+- (void)configureCell:(UITableViewCell *)cell forPosition:(NSInteger)index;
 - (void)horizontalMenu:(id)horizontalMenu didSelectPosition:(NSInteger)index;
 
 @end
 
 @interface APHorizontalMenu : UIView <UITableViewDataSource, UITableViewDelegate>
 
+@property (nonatomic) Class cellClass;
+@property (nonatomic) UINib *cellNib;
+
 @property (nonatomic, weak) IBOutlet id<APHorizontalMenuSelectDelegate> delegate;
-@property (nonatomic, copy) NSArray *values;
+@property (nonatomic) NSInteger rowCount;
+@property (nonatomic) NSInteger visibleCellCount;
+
 @property (nonatomic) NSInteger selectedIndex;
-
-@property (nonatomic) NSInteger visibleItems;
-
-@property (nonatomic, strong) UIColor *cellSelectedColor;
-@property (nonatomic, strong) UIColor *cellBackgroundColor;
-@property (nonatomic, strong) UIColor *textColor;
-@property (nonatomic, strong) UIColor *textSelectedColor;
-@property (nonatomic, strong) UIFont *textFont;
 
 @end
