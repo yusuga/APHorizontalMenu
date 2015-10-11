@@ -19,11 +19,25 @@
     [super viewDidLoad];
     
     self.horizontalMenu.delegate = self;
-    self.horizontalMenu.rowCount = 10;
     self.horizontalMenu.backgroundColor = [[UIColor greenColor] colorWithAlphaComponent:0.3];
 }
 
 #pragma mark - APHorizontalMenuSelectDelegate
+
+- (NSInteger)rowCount
+{
+    return 10;
+}
+
+- (CGFloat)cellWidth
+{
+    return 60.;
+}
+
+- (CGFloat)selectedCellWidth
+{
+    return 120.;
+}
 
 - (void)configureCell:(UITableViewCell *)cell forPosition:(NSInteger)index
 {
@@ -33,7 +47,7 @@
 
 - (void)horizontalMenu:(id)horizontalMenu didSelectPosition:(NSInteger)index
 {
-    NSLog(@"APHorizontalMenu selection: %ld", (long)index);
+    NSLog(@"APHorizontalMenu index: %zd", index);
 }
 
 @end

@@ -10,44 +10,65 @@
 
 static NSString * const kCellIdentifier = @"Cell";
 
+@interface APHorizontalMenuTableView : UITableView
+
+@end
+
+@implementation APHorizontalMenuTableView
+
+- (BOOL)touchesShouldCancelInContentView:(UIView *)view
+{
+    return YES;
+}
+
+@end
+
 @interface APHorizontalMenu ()
 
-@property (nonatomic, strong) UITableView *tableView;
-@property (nonatomic) NSInteger cellWidth;
-@property (nonatomic) BOOL isTouchAnimation;
+@property (nonatomic) UITableView *tableView;
 
 @end
 
 @implementation APHorizontalMenu
 
-#pragma mark - Initialization
-
-- (id)initWithCoder:(NSCoder *)aDecoder {
-    self = [super initWithCoder:aDecoder];
-    if(self) {
-        [self customInit];
-    }
-    return self;
-}
-
-- (id)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
-    if (self) {
-        [self customInit];
-    }
-    return self;
-}
-
-- (void)customInit
+- (void)layoutSubviews
 {
-    self.visibleCellCount = 3;
+    [super layoutSubviews];
+
+    if (!self.tableView) {
+        [self createTableView];
+    }
 }
 
-- (void)createMenuControl
+- (void)createTableView
 {
     CGRect frame = CGRectMake(0, 0, self.frame.size.height,self.frame.size.width);
-    self.tableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStylePlain];
+    CGFloat horizontalSpace = (self.bounds.size.width - [self.delegate selectedCellWidth])/2.;
+    
+    self.tableView = [[APHorizontalMenuTableView alloc] initWithFrame:frame style:UITableViewStylePlain];
     self.tableView.backgroundColor = [UIColor clearColor];
+    self.tableView.canCancelContentTouches = YES;
+    
+    if (self.tableHeaderView) {
+        CGRect frame = self.tableHeaderView.frame;
+        frame.size.width = horizontalSpace;
+        self.tableHeaderView.frame = frame;
+        
+        self.tableHeaderView.transform = CGAffineTransformMakeRotation(M_PI_2);
+        
+        self.tableView.tableHeaderView = self.tableHeaderView;
+    }
+    if (self.tableFooterView) {
+        self.tableFooterView.transform = CGAffineTransformMakeRotation(M_PI_2);
+        
+        CGRect frame = self.tableFooterView.frame;
+        frame.origin = CGPointZero;
+        frame.size.height = horizontalSpace;
+        self.tableFooterView.frame = frame;
+        
+        self.tableView.tableFooterView = self.tableFooterView;
+    }
+    
     self.tableView.dataSource = self;
     self.tableView.delegate = self;
     
@@ -66,72 +87,73 @@ static NSString * const kCellIdentifier = @"Cell";
     self.tableView.transform = CGAffineTransformMakeRotation(-M_PI_2);
     self.tableView.center = oldCenter;
     self.tableView.showsVerticalScrollIndicator = NO;
-    [self.tableView setDecelerationRate: UIScrollViewDecelerationRateNormal];
+    self.tableView.decelerationRate = UIScrollViewDecelerationRateNormal;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-}
-
-- (void)layoutSubviews
-{
-    [super layoutSubviews];
     
-    if (!self.tableView) {
-        [self createMenuControl];
-        [self update];
-    }
-}
-
-#pragma mark - Custom setters
-
-- (void)setRowCount:(NSInteger)rowCount
-{
-    if (_rowCount != rowCount) {
-        _rowCount = rowCount;
-        if (self.tableView) {
-            [self update];
-        }
-    }
-}
-
-- (void)setSelectedIndex:(NSInteger)selectedIndex
-{
-    if(_selectedIndex != selectedIndex) {
-        [self setCurrentIndex:[NSIndexPath indexPathForRow:selectedIndex inSection:0] animated:YES];
-    }
-}
-
-- (void)setVisibleCellCount:(NSInteger)visibleCellCount
-{
-    _visibleCellCount = visibleCellCount;
-    if (self.tableView) {
-        [self update];
-    }
-}
-
-- (void)update
-{
-    self.cellWidth = self.frame.size.width/self.visibleCellCount;
-    
-    NSInteger viewWidth = self.frame.size.width;
-    CGFloat f = (viewWidth-self.cellWidth)/2;
-    [self.tableView setContentInset: UIEdgeInsetsMake(f, 0, f, 0)];
+    CGFloat leadingSpace = self.tableView.tableHeaderView ? 0. : horizontalSpace;
+    CGFloat trailingSpace = self.tableView.tableFooterView ? 0. : horizontalSpace;
+    [self.tableView setContentInset: UIEdgeInsetsMake(leadingSpace, 0., trailingSpace, 0.)];
     self.clipsToBounds = YES;
     
     [self.tableView reloadData];
-    if(self.rowCount > self.selectedIndex) {
-        [self.tableView selectRowAtIndexPath:[NSIndexPath indexPathForRow:self.selectedIndex inSection:0] animated:NO scrollPosition:UITableViewScrollPositionTop];
+    
+    if([self.delegate rowCount] > self.selectedRow) {
+        [self.tableView selectRowAtIndexPath:[NSIndexPath indexPathForRow:self.selectedRow
+                                                                inSection:0]
+                                    animated:NO
+                              scrollPosition:UITableViewScrollPositionTop];
+        if ([self.delegate respondsToSelector:@selector(horizontalMenu:didSelectPosition:)]) {
+            [self.delegate horizontalMenu:self didSelectPosition:self.selectedRow];
+        }
+    }
+    
+    if (self.tableView.tableHeaderView) {
+        self.tableView.contentOffset = CGPointMake(self.tableView.contentOffset.x,
+                                                   0.);
     }
 }
 
-#pragma mark - UITableView control
+#pragma mark -
+
+- (void)setSelectedRow:(NSInteger)selectedIndex
+{
+    _selectedRow = selectedIndex;
+    
+    [self.tableView reloadData]; // Update all row height
+    
+    [self.tableView selectRowAtIndexPath:[NSIndexPath indexPathForRow:selectedIndex inSection:0]
+                                animated:NO
+                          scrollPosition:UITableViewScrollPositionNone];
+    
+    CGPoint offset = self.tableView.contentOffset;
+    offset.y = self.tableView.tableHeaderView.bounds.size.width + [self.delegate cellWidth]*selectedIndex - self.bounds.size.width/2. + [self.delegate selectedCellWidth]/2.;
+    [self.tableView setContentOffset:offset animated:YES];
+    
+    if ([self.delegate respondsToSelector:@selector(horizontalMenu:didSelectPosition:)]) {
+        [self.delegate horizontalMenu:self didSelectPosition:selectedIndex];
+    }
+}
+
+- (void)deleteRow:(NSInteger)row
+{
+    [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:row inSection:0]]
+                          withRowAnimation:UITableViewRowAnimationLeft];
+    
+    if ([self.delegate rowCount]) {
+        self.selectedRow = self.selectedRow == [self.delegate rowCount] ? self.selectedRow - 1 : self.selectedRow;
+    }
+}
+
+#pragma mark - UITableViewDelegate, UITableViewDataSource
 
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return self.cellWidth;
+    return indexPath.row == self.selectedRow ? [self.delegate selectedCellWidth] : [self.delegate cellWidth];
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    return self.rowCount;
+    return [self.delegate rowCount];
 }
 
 - (UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -144,49 +166,37 @@ static NSString * const kCellIdentifier = @"Cell";
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    self.isTouchAnimation = YES;
-    [self setCurrentIndex:indexPath animated:YES];
+    [self setSelectedRow:indexPath.row];
 }
 
-#pragma mark - Scroll control
+#pragma mark - UIScrollViewDelegate
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
+{
+    if ([self.delegate respondsToSelector:@selector(scrollViewWillBeginDragging:)]) {
+        [self.delegate scrollViewWillBeginDragging:scrollView];
+    }
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    if ([self.delegate respondsToSelector:@selector(scrollViewDidScroll:)]) {
+        [self.delegate scrollViewDidScroll:scrollView];
+    }
+}
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
 {
-    if (decelerate == NO) {
-        [self centerTable];
+    if ([self.delegate respondsToSelector:@selector(scrollViewDidEndDragging:willDecelerate:)]) {
+        [self.delegate scrollViewDidEndDragging:scrollView
+                                 willDecelerate:decelerate];
     }
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
 {
-    [self centerTable];
-}
-
-- (void)centerTable
-{
-    CGPoint point = [self convertPoint:CGPointMake(self.frame.size.width/2.0, self.frame.size.height/2.0) toView:self.tableView];
-    NSIndexPath* centerIndexPath = [self.tableView indexPathForRowAtPoint:point];
-    [self setCurrentIndex:centerIndexPath animated:YES];
-}
-
-- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView
-{
-    self.isTouchAnimation = NO;
-}
-
-- (void)setCurrentIndex:(NSIndexPath *)indexPath animated:(BOOL)animated
-{
-    if(self.isTouchAnimation || _selectedIndex != indexPath.row) {
-        
-        [self.tableView selectRowAtIndexPath:indexPath animated:animated scrollPosition:UITableViewScrollPositionTop];
-        
-        if(_selectedIndex != indexPath.row) {
-            _selectedIndex = indexPath.row;
-            
-            if ([self.delegate respondsToSelector:@selector(horizontalMenu:didSelectPosition:)]) {
-                [self.delegate horizontalMenu:self didSelectPosition:indexPath.row];
-            }
-        }
+    if ([self.delegate respondsToSelector:@selector(scrollViewDidEndDecelerating:)]) {
+        [self.delegate scrollViewDidEndDecelerating:scrollView];
     }
 }
 

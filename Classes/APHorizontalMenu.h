@@ -11,8 +11,18 @@
 // Protocol to get the selected item
 @protocol APHorizontalMenuSelectDelegate <NSObject>
 
+- (NSInteger)rowCount;
+- (CGFloat)cellWidth;
+- (CGFloat)selectedCellWidth;
 - (void)configureCell:(UITableViewCell *)cell forPosition:(NSInteger)index;
 - (void)horizontalMenu:(id)horizontalMenu didSelectPosition:(NSInteger)index;
+
+@optional
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView;
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView;
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView
+                  willDecelerate:(BOOL)decelerate;
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView;
 
 @end
 
@@ -20,11 +30,12 @@
 
 @property (nonatomic) Class cellClass;
 @property (nonatomic) UINib *cellNib;
+@property (nonatomic) UIView *tableHeaderView;
+@property (nonatomic) UIView *tableFooterView;
 
 @property (nonatomic, weak) IBOutlet id<APHorizontalMenuSelectDelegate> delegate;
-@property (nonatomic) NSInteger rowCount;
-@property (nonatomic) NSInteger visibleCellCount;
 
-@property (nonatomic) NSInteger selectedIndex;
+@property (nonatomic) NSInteger selectedRow;
+- (void)deleteRow:(NSInteger)row;
 
 @end
