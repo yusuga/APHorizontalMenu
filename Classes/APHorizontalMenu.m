@@ -137,7 +137,7 @@ static NSString * const kCellIdentifier = @"Cell";
 - (void)deleteRow:(NSInteger)row
 {
     [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:row inSection:0]]
-                          withRowAnimation:UITableViewRowAnimationLeft];
+                          withRowAnimation:UITableViewRowAnimationFade];
     
     if ([self.delegate rowCount]) {
         self.selectedRow = self.selectedRow == [self.delegate rowCount] ? self.selectedRow - 1 : self.selectedRow;
