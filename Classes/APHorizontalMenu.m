@@ -25,7 +25,7 @@ static NSString * const kCellIdentifier = @"Cell";
 
 @interface APHorizontalMenu ()
 
-@property (nonatomic) UITableView *tableView;
+@property (nonatomic, readwrite) UITableView *tableView;
 
 @end
 

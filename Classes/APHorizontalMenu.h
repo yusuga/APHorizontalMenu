@@ -28,6 +28,8 @@
 
 @interface APHorizontalMenu : UIView <UITableViewDataSource, UITableViewDelegate>
 
+@property (nonatomic, readonly) UITableView *tableView;
+
 @property (nonatomic) Class cellClass;
 @property (nonatomic) UINib *cellNib;
 @property (nonatomic) UIView *tableHeaderView;
